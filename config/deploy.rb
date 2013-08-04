@@ -1,5 +1,5 @@
 set :application, "beehively-websites"
-set :repository,  "git@github.com:syweb/locomotive-websites.git"
+set :repository,  "git@github.com:syweb/beehively-websites.git"
 set :user,        "ubuntu"
 set :domain,      "#{user}@insightmethods.info"
 set :deploy_to,   "/mnt/apps/#{application}"
@@ -9,10 +9,9 @@ set :use_sudo, false
 # set :scm, :git # You can set :scm explicitly or Capistrano will make an intelligent guess based on known version control directory names
 # Or: `accurev`, `bzr`, `cvs`, `darcs`, `git`, `mercurial`, `perforce`, `subversion` or `none`
 
-role :web, ""                          # Your HTTP server, Apache/etc
-role :app, "your app-server here"                          # This may be the same as your `Web` server
-role :db,  "your primary db-server here", :primary => true # This is where Rails migrations will run
-role :db,  "your slave db-server here"
+role :web, "insightmethods.info"                          # Your HTTP server, Apache/etc
+role :app, "insightmethods.info"                          # This may be the same as your `Web` server
+role :db,  "insightmethods.info", :primary => true # This is where Rails migrations will run
 
 # if you want to clean up old releases on each deploy uncomment this:
 # after "deploy:restart", "deploy:cleanup"
@@ -20,11 +19,23 @@ role :db,  "your slave db-server here"
 # if you're still using the script/reaper helper you will need
 # these http://github.com/rails/irs_process_scripts
 
-# If you are using Passenger mod_rails uncomment this:
-# namespace :deploy do
-#   task :start do ; end
-#   task :stop do ; end
-#   task :restart, :roles => :app, :except => { :no_release => true } do
-#     run "#{try_sudo} touch #{File.join(current_path,'tmp','restart.txt')}"
-#   end
-# end
+# if you are using Passenger mod_rails uncomment this:
+namespace :deploy do
+  task :start do ; end
+  task :stop do ; end
+  task :restart, :roles => :app, :except => { :no_release => true } do
+    run "#{try_sudo} touch #{File.join(current_path,'tmp','restart.txt')}"
+  end
+end
+
+namespace :deploy do
+  desc "Symlink shared resources on each release - not used"
+  task :symlink_shared, :roles => :app do
+    run "ln -nfs #{shared_path}/sites #{release_path}/public/sites"
+    run "ln -nfs #{shared_path}/assets #{release_path}/public/assets"
+  end
+end
+
+after 'deploy:symlink', 'deploy:symlink_shared'
+
+# rvmsudo passenger start -e production -p 80 --user=ubuntu
